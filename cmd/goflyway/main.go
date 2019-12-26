@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -192,9 +191,13 @@ func main() {
 			HostPolicy: autocert.HostWhitelist(httpsProxy),
 		}
 		s := &http.Server{
-			Addr:         addr,
-			TLSConfig:    m.TLSConfig(),
-			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)),
+			Addr:      addr,
+			TLSConfig: m.TLSConfig(),
+		}
+		for i, p := range s.TLSConfig.NextProtos {
+			if p == "h2" {
+				s.TLSConfig.NextProtos[i] = "h2-disabled"
+			}
 		}
 		s.Handler = &connector{}
 		v.Eprint(s.ListenAndServeTLS("", ""))
